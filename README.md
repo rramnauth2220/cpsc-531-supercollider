@@ -8,6 +8,11 @@ Computer Science PhD Student </br>
 Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) </br>
 
 ---------
+## Midterm: Musique concrète
+
+Description with relevant citations TBP ~Oct 19-25 2019
+
+---------
 ## Project 1: Matrix Beats
 
 For the Matrix Beats project version 1, I used the default four samples (snare, high-hat, hat, kick) provided with Scott's starter code (I know, how unoriginal&mdash;but I do experiment with new samples and ways to organize them in version 2). This is to avoid wasting time on finding "good" samples and blaming any garbage output on my garbage inputs. 
