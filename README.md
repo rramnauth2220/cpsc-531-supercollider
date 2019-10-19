@@ -8,7 +8,7 @@ Computer Science PhD Student </br>
 Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) </br>
 
 ---------
-## Midterm: Musique concrète
+## Midterm: Musique Concrète
 
 Description with relevant citations TBP ~Oct 19-25 2019
 
