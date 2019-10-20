@@ -12,13 +12,41 @@ Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) <
 
 **Musique concrète** is a method of music composition which uses recorded sounds as raw material. As a result, *fragment sounds* (i.e., "a fragment of a sound object... in which a 'center of interest' can be identified" seem obscured and/or unconnected to their source ([Schaeffer](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/531-Readings/Schaeffer_Concrete-Theory.pdf) 3). Cottle reminds us that live music "has a dimension recorded pieces do not" which is the "potential for growth and change" ([Cottle](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/531-Readings/Cottle_concrete-in-SC3.pdf) 123). He further argues this claim by stating that "many people equate a recording with a performance. In a sense it has tainted our expectations: we attend a concert expecting what we heard on the CD." While this may be a true social phenomenon, I believe that when Cottle implies that concrète achieves what "digital manipulation do that can't be done on any other instrument," we must really reconsider what fits the category of *instruments* and what digital manipulation has attempted and is attempting to do. With this said, it seems that concrète strategies (e.g., looping, pitch and time shifting, reversals, and abrupt edits) are already commonplace and its more rare to hear about celebrated acoustic compositions (without explicitly googling them) than those which are electronically manipulated. 
 
-Notwithstanding the present regard for musique concrète, I found this midterm to be a unique design challenge: collating fragment recordings according to some <span style="background-color: #fff6bd">rules of categorization, transformation, and synthesis.</span> To begin, I thought of several themes to impose a kind of structure on the program and my expectations of what the output should be like. One theme I was enthused about was using recordings of water to cover [Handel's Water Suite](https://en.wikipedia.org/wiki/Water_Music). Although interesting, this was rather uncreative (or creative along one dimension: pairing fragments sources to an existing composition) and left little room for next steps once achieved. A theme that relates to more than one of three dimensions (i.e., categorization, transformation, and synthesis) of the assignment would not fulfill Cottle's definition of concrète to have "potential for growth and change". In addition, having fragment sounds that become obscured or disconnected from their origin is characteristic of concrète--it didn't make sense record water sounds in the hopes someone will catch the pun. 
+Notwithstanding the present regard for musique concrète, I found this midterm to be a unique design challenge: collating fragment recordings according to some <span style="background-color: #fff6bd">rules of categorization, transformation, and synthesis.</span> To begin, I thought of several themes to impose a kind of structure on the program and my expectations of what the output should be like. One theme I was enthused about was using recordings of water to cover [Handel's Water Suite](https://en.wikipedia.org/wiki/Water_Music). Although interesting, this was rather uncreative (or creative along one dimension: pairing fragments sources to an existing composition) and left little room for next steps once achieved. A theme that relates to more than one of three dimensions (i.e., categorization, transformation, and synthesis) of the assignment would not fulfill Cottle's definition of concrète to have "potential for growth and change". In addition, having fragment sounds that become obscured or disconnected from their origin is characteristic of concrète&mdash;so it didn't make sense record water sounds in the hopes someone will catch the pun. 
 
 As such, my [recordings](https://drive.google.com/drive/folders/1mkOFGRBSr9o-VVtMj5kUgKsSV-WBHUPM?usp=sharing) didn't have any coherent story between them. They were typically sounds of items in my apartment building (e.g., heater, dryer and washing machines, doors, elevators). Of a select few recordings, I edited them to either amplify or obscure the source. However. it didn't really matter how these recordings were initially altered, because I thought it would be more interesting to automate this in my program. 
 
 ### Categorization
 
-
+```
+.
+├── RAMNAUTH-531-Musique-Concrete.scd
+├── outputs
+│   ├── 0_0_mel_0_twinkle.aiff
+│   ├── met_0_mel_amb_graveyard.aiff
+│   ├── met_voc_mel_0_beethoven.aiff
+│   ├── ...(other example outputs)...
+├── patternize.sc
+└── samples
+    ├── ambient
+    │   ├── sound
+    │   │   ├── cemetery_night.wav
+    │   │   ├── rain.wav
+	│   │   └── ...(other ambient sounds)...
+    │   └── speech
+    │       ├── 0.185.wav
+	│       ├── 0.187.wav
+    │       └── ...(other speech recordings)...
+    ├── midi
+    │   ├── beethoven_opus10_1.mid
+    │   ├── chopin_nocturne.mid
+	│   ├── twinkle_twinkle.mid
+    │   └── ...(other midi files)...
+    └── subject
+        ├── clock_ticking.wav
+        ├── heater_hum.wav
+        └── ...(other subject sounds)...
+```
 
 
 WIP 10-20-2019... To be completed
