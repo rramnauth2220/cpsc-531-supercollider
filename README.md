@@ -32,7 +32,7 @@ As such, my [recordings](https://drive.google.com/drive/folders/1mkOFGRBSr9o-VVt
     │   ├── sound
     │   │   ├── cemetery_night.wav
     │   │   ├── rain.wav
-	│   │   └── ...(other ambient sounds)...
+    │   │   └── ...(other ambient sounds)...
     │   └── speech
     │       ├── 0.185.wav
     │       ├── 0.187.wav
