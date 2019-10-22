@@ -10,6 +10,17 @@ Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) <
 ---------
 ## Midterm: Musique Concrète
 
+Generative musique concrète in SuperCollider. 
+
+### General Information 
+- example output compositions are available on SoundCloud at [soundcloud.com/rramnauth2220/sets/musique-concrete](https://soundcloud.com/rramnauth2220/sets/musique-concrete).
+- complete source code are available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm)
+- fragment recordings and log are available on Google Drive at [https://bit.ly/33KrHSD](https://bit.ly/33KrHSD)
+
+[[MORE]] 
+
+### Concrète Recordings
+
 **Musique concrète** is a method of music composition which uses recorded sounds as raw material. As a result, *fragment sounds* (i.e., "a fragment of a sound object... in which a 'center of interest' can be identified" seem obscured and/or unconnected to their source ([Schaeffer](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/531-Readings/Schaeffer_Concrete-Theory.pdf) 3). Cottle reminds us that live music "has a dimension recorded pieces do not" which is the "potential for growth and change" ([Cottle](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/531-Readings/Cottle_concrete-in-SC3.pdf) 123). He further argues this claim by stating that "many people equate a recording with a performance. In a sense it has tainted our expectations: we attend a concert expecting what we heard on the CD." While this may be a true social phenomenon, I believe that when Cottle implies that concrète achieves what "digital manipulation do that can't be done on any other instrument," we must really reconsider what fits the category of *instruments* and what digital manipulation has attempted and is attempting to do. With this said, it seems that concrète strategies (e.g., looping, pitch and time shifting, reversals, and abrupt edits) are already commonplace and its more rare to hear about celebrated acoustic compositions (without explicitly googling them) than those which are electronically manipulated. 
 
 Notwithstanding the present regard for musique concrète, I found this midterm to be a unique design challenge: collating fragment recordings according to some <span style="background-color: #fff6bd">rules of categorization, transformation, and synthesis.</span> To begin, I thought of several themes to impose a kind of structure on the program and my expectations of what the output should be like. One theme I was enthused about was using recordings of water to cover [Handel's Water Suite](https://en.wikipedia.org/wiki/Water_Music). Although interesting, this was rather uncreative (or creative along one dimension: pairing fragments sources to an existing composition) and left little room for next steps once achieved. A theme that relates to more than one of three dimensions (i.e., categorization, transformation, and synthesis) of the assignment would not fulfill Cottle's definition of concrète to have "potential for growth and change". In addition, having fragment sounds that become obscured or disconnected from their origin is characteristic of concrète&mdash;so it didn't make sense record water sounds in the hopes someone will catch the pun. 
@@ -222,11 +233,29 @@ Finally, to play the ambient vocal:
 
 ### Synthesis
 
-// highlight important of 4 switches for voices and buffer stereo-mono hack.
-// also highlight versatility--can drag and drop recordings into composition without being programmatically time/space inefficient. 
+Putting together these four voices is accomplished through four user-controlled boolean switches. From a programmer's perspective, these four switches were important for testing the algorithms of each voice. Eventually, I left them for the user to toggle and see the impact of each voice in the resulting output. 
 
+```cpp
+~metronome_voice = true;  // rhythm
+~vocal_voice = true;      // main "vocals"
+~melody_voice = true;     // repeating "melody"
+~ambient_voice = false;   // ambient speech + background
+```
 
-WIP 10-20-2019... To be completed
+Example output compositions are available on SoundCloud at [soundcloud.com/rramnauth2220/sets/musique-concrete](https://soundcloud.com/rramnauth2220/sets/musique-concrete). 
+
+Although I did not use a majority of [my fragment recordings](https://bit.ly/33KrHSD) in these example outputs, the program is capable of reading and selecting recordings from a directory of any number of sound files. This versatility is possible because sound files are not explicitly declared and loaded into buffers, but rather are randomly selected from an array of relative paths to possible sound files. For example, when selecting an ambient background sound:
+
+```cpp
+var ambient_sounds = PathName.new("samples/ambient/sound/".resolveRelative).entries;
+var sound_input = Buffer.readChannel(s, ambient_sounds[rrand(0, ambient_sounds.size - 1)].asRelativePath, channels: 0);
+```
+
+The outputs that select from all fragment recordings are as interesting and 'listenable' as the examples provided. However, in the example output compositions I wanted to highlight how changing the inputs can affect the system's outputs. 
+
+### Further Directions
+
+If I had more time to dedicate to improving this system, I would explore directions similar to that mentioned in [Project 1's Matrix Beats](https://github.com/rramnauth2220/cpsc-531-supercollider#further-directions). I would eliminate these seemingly arbitrary user inputs, having the only input be the midi file by which the Markov chain is generated. From the midi input alone, how can the system accurately and efficiently determine relevant voices and the content of each voice (e.g., motif extraction for the melody)? Nevertheless, this is more a programmatic effort/challenge than an artistic one. 
 
 ---------
 ## Project 1: Matrix Beats
@@ -237,6 +266,8 @@ For the Matrix Beats project version 1, I used the default four samples (snare, 
 - audio recordings of system are posted on YouTube at [https://youtu.be/FabUtYX-XWY](https://youtu.be/FabUtYX-XWY) to demo how changing the inputs influences the outputs
 - complete source code and samples are available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-1](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-1)
 - feel free to reach out to me about this project at [rebecca.ramnauth@yale.edu](mailto:rebecca.ramnauth@yale.edu)
+
+[[MORE]] 
 
 ### Determining User Inputs
 To begin, I needed to establish which inputs the user should control versus which methods/variables should be somewhat beyond the non-programmer's reach. Below is a description of a few highlighted user inputs.
