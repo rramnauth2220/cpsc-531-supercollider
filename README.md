@@ -17,7 +17,7 @@ Generative musique concrète in SuperCollider.
 - complete source code are available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm)
 - fragment recordings and log are available on Google Drive at [https://bit.ly/33KrHSD](https://bit.ly/33KrHSD)
 
-[[MORE]] 
+<!--more-->
 
 ### Concrète Recordings
 
@@ -267,7 +267,7 @@ For the Matrix Beats project version 1, I used the default four samples (snare, 
 - complete source code and samples are available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-1](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-1)
 - feel free to reach out to me about this project at [rebecca.ramnauth@yale.edu](mailto:rebecca.ramnauth@yale.edu)
 
-[[MORE]] 
+<!--more-->
 
 ### Determining User Inputs
 To begin, I needed to establish which inputs the user should control versus which methods/variables should be somewhat beyond the non-programmer's reach. Below is a description of a few highlighted user inputs.
