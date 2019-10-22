@@ -18,35 +18,109 @@ As such, my [recordings](https://drive.google.com/drive/folders/1mkOFGRBSr9o-VVt
 
 ### Categorization
 
-```
+As a novice musician, I assume that most music, especially pop songs, tend to have 4 primary components: (1) a underlying beat for the purpose of rhythm-keeping, (2) a main instrument (often human vocals), (3) a kind of melody/motif, and (4) background music/noise/stuff. As such, I organized my fragment recordings into ambient  (either of background sounds or human speech) and subject recordings. This is reflected in the directory tree, as follows:
+
+```cpp
 .
 ├── RAMNAUTH-531-Musique-Concrete.scd
 ├── outputs
 │   ├── 0_0_mel_0_twinkle.aiff
 │   ├── met_0_mel_amb_graveyard.aiff
 │   ├── met_voc_mel_0_beethoven.aiff
-│   ├── ...(other example outputs)...
+│   ├── // additional sample outputs of final program
 ├── patternize.sc
-└── samples
+└── samples // dir holding all recordings
     ├── ambient
     │   ├── sound
     │   │   ├── cemetery_night.wav
     │   │   ├── rain.wav
-    │   │   └── ...(other ambient sounds)...
+    │   │   └── // additional background sounds
     │   └── speech
     │       ├── 0.185.wav
     │       ├── 0.187.wav
-    │       └── ...(other speech recordings)...
+    │       └── // additional human speech recordings
     ├── midi
     │   ├── beethoven_opus10_1.mid
     │   ├── chopin_nocturne.mid
     │   ├── twinkle_twinkle.mid
-    │   └── ...(other midi files)...
+    │   └── // additional midi files
     └── subject
         ├── clock_ticking.wav
         ├── heater_hum.wav
-        └── ...(other subject sounds)...
+        └── // additional subject recordings
 ```
+
+At first, I thought it would be interesting (and, eventually found, not immediately useful) to automate this organization by having the program determine which sound files are of ambient or subject sounds. According to the midterm specifications, the program must be of one-click evaluation. A function to differentiate between sound types would make this a two-part evaluation unless I was okay with having to recompute the organization of ambient versus subject sound at every runtime&mdash;I wasn't. 
+
+On the one hand, the process of choosing which samples to use from each subdirectory is a random process. On the other hand, the processes of how many samples to choose and from which subdirectory are not. The program will initially read a specified number of note pitches, amplitudes, and durations from a given midi file, then generate a Markov chain of a specified order, and output a sequence of a specified length using the generated Markov model. As such, the user-controllable inputs are as follows:
+
+```cpp
+	~metronome_voice = true;    ~metronome_amp = 0.25;    // rhythm
+	~vocal_voice = true;        ~vocal_amp = 0.25;        // main "vocals"
+	~melody_voice = true;       ~melody_amp = 0.25;       // repeating "melody"
+	~ambient_voice = true;      ~ambient_amp = 0.75;      // ambient speech + background
+
+	~measures = inf; // # of measures
+	~rate = 0.3; // audio rate
+
+	~input = "samples/midi/chopin_nocturne.mid"; // patterns derived from given midi file
+	~patternLength = 50; // how much data to take from midi input
+	~chainLength = 500; // resulting chain length
+	~chainOrder = 2; // order of Markov Chain
+```
+
+### Transformation
+
+I defined four 'voices': the ```~metronome_voice```, ```~vocal_voice```, ```~melody_voice```, and ```~ambient_voice```. Each voice is generated independently of each other. 
+
+#### Vocals
+
+This voice is the result of reading note events of a given midi file. The example midi files provided in the ```/samples/midi/``` directory were downloaded from [kunstderfuge.com](http://kunstderfuge.com/). 
+
+```cpp
+f = SimpleMIDIFile.read(~input.resolveRelative);
+c = f.patternize; // convert SimpleMIDIFile into a Ppar
+t = c.asStream; // convert Ppar into Stream
+
+~elements = []; ~notes = []; ~durations = []; ~amplitudes = [];
+~patternLength.do({ // populate above arrays with note data
+	~elements = ~elements.add(t.next(Event.default));
+	~notes = ~notes.add(~elements[~elements.size - 1].midinote);
+	~durations = ~durations.add(~elements[~elements.size - 1].dur);
+	~amplitudes = ~amplitudes.add(~elements[~elements.size - 1].amp);
+});
+```
+
+Then, generate a sequence of ```~chainLength``` Markov chain of order ```~chainOrder``` after reading ```~patternLength``` note events from the ```~input``` midi file:
+
+```cpp
+m = MarkovSetN.fill(~chainLength, Pseq(~notes.asArray).asStream, ~chainOrder);
+m.makeSeeds;
+x = m.asStream;
+x.next([0, ~chainOrder]);
+~markov_notes = Array.fill(~notes.size, {x.next});
+```
+
+Finally, playing the result is straightforward:
+
+```cpp
+Pbind(
+    \instrument, \drone,
+	\freq, Pseq(~markov_notes.midicps, ~measures),
+    \speed, Pseq(~durations, ~measures),
+	\amp, Pseq(~amplitudes.normalize(0, ~vocal_amp), ~measures)
+).play;
+```
+
+#### Melody
+
+
+
+// next steps
+- User input synthdefs? 
+
+
+
 
 
 WIP 10-20-2019... To be completed
