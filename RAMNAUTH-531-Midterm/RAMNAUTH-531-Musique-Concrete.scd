@@ -9,7 +9,7 @@ s.waitForBoot {
 	~metronome_voice = true;    ~metronome_amp = 0.25;    // rhythm
 	~vocal_voice = true;        ~vocal_amp = 0.25;        // main "vocals"
 	~melody_voice = true;       ~melody_amp = 0.25;       // repeating "melody"
-	~ambient_voice = true;      ~ambient_amp = 0.75;      // ambient speech + background
+	~ambient_voice = false;      ~ambient_amp = 0.75;      // ambient speech + background
 
 	~measures = inf; // # of measures
 	~rate = 0.3; // audio rate
@@ -197,6 +197,7 @@ s.waitForBoot {
 
 		outBeats = outBeats.flatten;
 
+
 		// create separate "parts" for each fragment sound
 		outBeats.size.do {|i|
 			if (outBeats[i] == \a,  {frag_1.add(0.25)},  {frag_1.add(Rest(0.25))});
@@ -212,19 +213,19 @@ s.waitForBoot {
 			\instrument, \playBuf,
 			\dur,        Pseq(frag_1, ~measures),
 			\buffer,     b[0],
-			\amp,        Pseq(~fragment_amplitudes[0], ~measures)
+			\amp,        Pseq(fragment_amplitudes[0], ~measures)
 		);
 		~subject_b = Pbind(
 			\instrument, \playBuf,
 			\dur,        Pseq(frag_2, ~measures),
 			\buffer,     b[1],
-			\amp,        Pseq(~fragment_amplitudes[1], ~measures)
+			\amp,        Pseq(fragment_amplitudes[1], ~measures)
 		);
 		~subject_c = Pbind(
 			\instrument, \playBuf,
 			\dur,        Pseq(frag_3, ~measures),
 			\buffer,     b[2],
-			\amp,        Pseq(~fragment_amplitudes[2], ~measures)
+			\amp,        Pseq(fragment_amplitudes[2], ~measures)
 		);
 
 		Ppar([~subject_a, ~subject_b, ~subject_c], ~measures).play;
@@ -254,7 +255,7 @@ s.waitForBoot {
 
 		Pbind(\instrument, \drone,
 			\freq, Pseq(~markov_notes.midicps, ~measures),
-			\bpeed, Pseq(~durations, ~measures),
+			\speed, Pseq(~durations, ~measures),
 			\amp, Pseq(~amplitudes.normalize(0, ~vocal_amp), ~measures))
 		.play;
 	};

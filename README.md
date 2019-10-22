@@ -75,7 +75,7 @@ I defined four 'voices': the ```~metronome_voice```, ```~vocal_voice```, ```~mel
 
 #### Vocals
 
-This voice is the result of reading note events of a given midi file. The example midi files provided in the ```/samples/midi/``` directory were downloaded from [kunstderfuge.com](http://kunstderfuge.com/). 
+This voice is the result of reading note events of a given midi file. The example midi files provided in the ```/samples/midi/``` directory were downloaded from [kunstderfuge.com](http://kunstderfuge.com/). Only ```~patternLength``` note events from the midi file are extracted for the purpose of efficiency.
 
 ```cpp
 f = SimpleMIDIFile.read(~input.resolveRelative);
@@ -106,21 +106,124 @@ Finally, playing the result is straightforward:
 ```cpp
 Pbind(
     \instrument, \drone,
-	\freq, Pseq(~markov_notes.midicps, ~measures),
+    \freq, Pseq(~markov_notes.midicps, ~measures),
     \speed, Pseq(~durations, ~measures),
-	\amp, Pseq(~amplitudes.normalize(0, ~vocal_amp), ~measures)
+    \amp, Pseq(~amplitudes.normalize(0, ~vocal_amp), ~measures)
 ).play;
 ```
 
 #### Melody
 
+At first, I thought about algorithms for melody extraction. A primitive method may be to extract the most prevalent motif. This could be done by identifying the most common pattern in the array of notes. However, a problem with this is first determining an adequate length of the pattern, else the most common pattern may simply be a single note. You could read more about possible methods of extraction here: [IEEE Signal Processing - Melody Extraction from Polyphonic Music Signals](https://ieeexplore.ieee.org/document/6739213). Nonetheless, in accordance with this paper's definition of the aim of melody extraction algorithms, my goal in now *generating* a melody (as opposed to *finding* the melody) is "to produce a sequence of frequent values corresponding to the pitch of the dominant melody from a musical recording."
 
+To achieve this, I determined melody parameters of ```melody_length``` (determined by the standard deviation of note pitches of the first ```~patternLength``` pitches in the input midi file), ```melody_notes``` (are the ```melody_length```th most common pitches in midi file), and ```melody_durations``` (the corresponding durations of those pitches). 
 
-// next steps
-- User input synthdefs? 
+```cpp
+// melody length
+var melody_length = ~calculateSD.value(~notes).round(1);
 
+// melody pitches
+var note_frequencies = ~getFrequencies.value(~notes, ~notes.asSet.asArray);
+var melody_notes = ~getNCommon.value(note_frequencies, ~notes.asSet.asArray, melody_length);
 
+// melody note durations
+var duration_frequencies = ~getFrequencies.value(~durations, ~durations.asSet.asArray);
+var melody_durations = ~getNCommon.value(duration_frequencies, ~durations.asSet.asArray, melody_length);
+```
 
+To clarify, although this algorithm doesn't provide the true 'melody' of the midi file, it does "produce a sequence of frequent values" which can seem like a *generated* melody. 
+
+The melody is played similar to the vocals, with a ```PBind```:
+
+```
+Pbind(
+    \instrument, \bass,
+    \freq, Pseq(melody_notes.midicps, ~measures),
+    \dur, Pseq(melody_durations, ~measures),
+    \amp, ~melody_amp
+).play;
+```
+
+#### Metronome
+
+The purpose of the metronome is to establish a rhythm throughout the composition. The logic for how the metronome parses and transforms the fragment recordings is similiar to that in Project 1's [Matrix Beats](https://github.com/rramnauth2220/cpsc-531-supercollider#project-1-matrix-beats). However, the subject sounds are traversed using the ```/samples/subject/``` directory by
+
+```cpp
+var subjects = PathName.new("samples/subject/".resolveRelative).entries;
+```
+
+and three subject sounds are randomly chosen and arranged as in the Matrix Beats program.
+
+```cpp
+outBeats.size.do {|i|
+	if (outBeats[i] == \a,  {frag_1.add(0.25)},  {frag_1.add(Rest(0.25))});
+	if (outBeats[i] == \b,  {frag_2.add(0.25)},  {frag_2.add(Rest(0.25))});
+	if (outBeats[i] == \c,  {frag_3.add(0.25)},  {frag_3.add(Rest(0.25))});
+};
+
+b = Array.fill(3, { rrand(0, subjects.size - 1)}).collect{|val| Buffer.readChannel(s, subjects[val].asRelativePath, channels: 0) };
+```
+
+Then, each arrangment of a subject sound is played using:
+
+```cpp
+~subject_a = Pbind(
+    \instrument, \playBuf,
+    \dur,        Pseq(frag_1, ~measures),
+    \buffer,     b[0],
+    \amp,        Pseq(~fragment_amplitudes[0], ~measures)
+); // Pbinds for ~subject_b and ~subject_c are similiarly defined
+
+Ppar([~subject_a, ~subject_b, ~subject_c], ~measures).play;
+```
+
+#### Ambient
+
+Ambient voices have two subcategories: background sounds (aka non-speech) and human speech. Originally, I used a test file of a flight attendant reciting the airline safety procedures for ambience and I thought the 'speechiness' of it had an interesting effect. As such, I decided to include 'speeches' and other ambient sounds to culminate in the ultimate 'ambience' of the composition. For how this blends with the metronome and other elements of this composition, I leave up to your interpretation. 
+
+A ambient sound input is selected randomly from the ```/samples/ambient/sound/``` directory using:
+
+```cpp
+// get all files in directory
+var ambient_sounds = PathName.new("samples/ambient/sound/".resolveRelative).entries;
+
+// randomly choose one file
+var sound_input = Buffer.readChannel(s, ambient_sounds[rrand(0, ambient_sounds.size - 1)].asRelativePath, channels: 0);
+```
+
+Similarly, ```speech_input```, defined in the synth definition for ```~speech```, is a randomly selected file from the ```/samples/ambient/speech/``` directory. Nonetheless, I distorted the speech file using ```PitchShift``` to add noise and time dispersion because I didn't want the words of the speech to be the highlight of the composition as compared to the idea of the speech. 
+
+The complete synth definition for speech:
+
+```cpp
+~speech = SynthDef(
+    \speech, {| out = 0, bufnum = 0 |
+    var signal, speech_input;
+    var ambient_speeches = PathName.new("samples/ambient/speech/".resolveRelative).entries;
+    var ambient_speech = ambient_speeches[rrand(0, ambient_speeches.size - 1)];
+    speech_input = Buffer.read(s, ambient_speech.asRelativePath);
+    signal = PlayBuf.ar(2, speech_input, rate: ambient_speech.fileNameWithoutExtension.asFloat, loop: 1);
+    signal = PitchShift.ar(
+        signal,         // stereo audio input
+        0.1,            // grain size
+        1,              // control rate
+        0.01,           // pitch dispersion
+        SinOsc.ar(1)    // time dispersion
+    );
+    Out.ar(out, signal * ~ambient_amp)
+});
+```
+Finally, to play the ambient vocal:
+
+```cpp
+{ (PlayBuf.ar(1, sound_input, rate: 0.4, loop: 1) * ~ambient_amp * 0.5).dup }.play; // play background sound
+~speech.play(s, [\out, 0, \bufnum, b]); // play speech
+```
+
+### Synthesis
+
+// highlight important of 4 switches for voices and buffer stereo-mono hack.
+// also highlight versatility--can drag and drop recordings into composition without being programmatically time/space inefficient. 
 
 
 WIP 10-20-2019... To be completed
