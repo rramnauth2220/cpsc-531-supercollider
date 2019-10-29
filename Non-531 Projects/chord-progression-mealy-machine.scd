@@ -80,6 +80,7 @@ Scale degrees are numbered 1-7. (But in computer languages, we count from 0, so 
 
 */
 
+
 /* -------------------  GENERATING VALID CHORD PROGRESSIONS --------------------- */
 ~rules = [
 	[2, 3, 4, 5, 6, 7],     // tonic         // I
@@ -117,8 +118,8 @@ Scale degrees are numbered 1-7. (But in computer languages, we count from 0, so 
 		if (rules[i].contains(in[i + 1])) { } { valid = false };
 	});
 	valid;
-}
-
+};
+// in progress
 ~isProgressionValid.value(~rules, ~testProgression);
 
 (
@@ -145,7 +146,7 @@ SynthDef(\piano, { |out=0, freq=440, gate=1|
 	});
 	if (returnHome == true) { result = result.add(result[0]); };
 	result;
-}
+};
 
 ~chords_1 = ~getChords.value(Scale.major, ~orientation, ~root, ~testProgression, true).midicps;
 ~chords_2 = ~getChords.value(Scale.minor, ~orientation, ~root + 1, ~testProgression, true).midicps;
@@ -156,32 +157,62 @@ Pbind(
 	\dur, 1
 ).play
 
+// returns a progression of chords of orientation @orientation that reflects a scale of @root in @key of length @length
+~getProgressionScale = {
+	| key, root, length, orientation |
+	var progression = ~getChords.value(key, orientation, root, Array.fill(length, { arg i; i + root; }), false);
+	progression;
+}; // test case // ~getProgressionScale.value(Scale.major, 0, 7, ~orientation)
+
 /* -----------------------  MODULATION V. TONICIZATION ------------------------- */
 ~prevState = 0; // 0 = modulation, 1 = tonicization
 
-~getPivotChords = {
+// returns a set which is the intersection of arrays @from and @to
+/* ~getPivotChords = {
 	| from, to |
 	var pivots;
 	var f = from.asSet;
 	var t = to.asSet;
 	pivots = f & t;
-	/*
-	if (from.size >= to.size) {
-		for (0, to.size - 1, {
-			arg i;
-			if (from.contains(to[i])) { pivots = pivots.add(to[i]) }
-		})
-	} {
-		for (0, from.size - 1, {
-			arg i;
-			if (to.contains(from[i])) { pivots = pivots.add(from[i]) }
-		})
-	}; */
-	//pivots;
+} // musical theory error - pivots are between keys not chord progressions */
+
+// returns a set which is the intersection of the keys @from and @to
+~getPivotChords = {
+	| from, to |
+
+
+} // use ~getPivotChords.value(3, 5); // from e to g, but what about major/minor?
+
+~pivotChords = ~getPivotChords.value(~chords_1, ~chords_1).asArray;
+
+~getScaleDegree = {
+	| map, dominant |
+	var results;
+	for (0, map.size - 1, {
+		arg i;
+		if(map[i].asSet.includes(dominant) && ((i + 1) != dominant)) { results = results.add(i + 1) };
+	});
+	results;
 }
 
-~pivotChords = ~getPivotChords.value(~chords_1, ~chords_1)
-if (~pivotChords.size > 0) { /* use a pivot modulation */ } { /* use a diatonic modulation */}
+~getScaleDegree.value(~rules, 5); // gets items that are predominant
+
+~getCommonPivots = {
+	| map, pivots, degree |
+	var d = ~getScaleDegree.value(map, degree);
+	// to be continued
+}
+
+// in progress
+~getCommonPivots.value(~rules, ~pivotChords, 5); // common pivots are defined as predominant chords
+
+if (~pivotChords.size > 0) {
+	/* use a diatonic-pivot modulation */
+	var pivot = ~pivotChords[].cpsmidi).postln;
+
+} { /* use a phrase modulation */}
+
+
 
 /*
 --------------------------------------
