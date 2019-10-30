@@ -8,13 +8,29 @@ Computer Science PhD Student </br>
 Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) </br>
 
 ---------
+## Musical Mealy Machine
+
+Generates mealy machine which generates chord progressions and modulations between keys. 
+
+### General Information
+- example output progressions will be uploaded on either SoundCloud/YouTube
+- source code is available on GitHub as [https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/Non-531%20Projects/chord-progression-mealy-machine.scd](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/Non-531%20Projects/chord-progression-mealy-machine.scd)
+
+### System Rules
+
+The system will *generate* a mealy machine according to given rules. In Western tonal music, such rules may include that a dominant chord is generally follows by either a tonic or subdominant chord.  
+
+![Common Chord Movements in Western Tonal Music](images/common-chord-movements.png)
+
+
+---------
 ## Midterm: Musique Concrète
 
 Generative musique concrète in SuperCollider. 
 
 ### General Information 
 - example output compositions are available on both SoundCloud at [soundcloud.com/rramnauth2220/sets/musique-concrete](https://soundcloud.com/rramnauth2220/sets/musique-concrete) and YouTube at [https://www.youtube.com/playlist?list=PL6PK-gyv7Apqc5HYcv96DZ5INr4xcGCdF](https://www.youtube.com/playlist?list=PL6PK-gyv7Apqc5HYcv96DZ5INr4xcGCdF). **FYI**, SoundCloud and YouTube has their own compression and standardizing formats, so the outputs sound different there. For the orginal output files, check out [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm/outputs](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm/outputs)
-- complete source code are available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm)
+- complete source code is available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Midterm)
 - fragment recordings and log are available on Google Drive at [https://bit.ly/33KrHSD](https://bit.ly/33KrHSD)
 
 ### Concrète Recordings
