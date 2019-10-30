@@ -80,139 +80,232 @@ Scale degrees are numbered 1-7. (But in computer languages, we count from 0, so 
 
 */
 
-
-/* -------------------  GENERATING VALID CHORD PROGRESSIONS --------------------- */
-~rules = [
-	[2, 3, 4, 5, 6, 7],     // tonic         // I
-	[1, 5, 7],              // supertonic    // ii
-	[1, 4, 6],              // mediant       // iii
-	[1, 2, 5, 7],           // subdominant   // IV
-	[1, 4],                 // dominant      // V
-	[1, 2, 3, 4, 5],        // submediant    // vi
-	[1]                     // leading tone  // vii
-];
-
-// gives progression of @num length by traversing @map starting at element @start
-~getProgression = {
-	| map, num, start |
-	var progression = [start];
-	var current_node = start;
-	for (0, num - 2, {
-		arg i;
-		var next_node = map[current_node - 1][(map[current_node - 1].size - 1).rand];
-		progression = progression.add(next_node);
-		current_node = next_node;
-	});
-	progression;
-}
-
-~testProgression = ~getProgression.value(~rules, 4, 1);
-
-// in progress
-// unit test, check if @in is a valid progression according to @rules
-~isProgressionValid = {
-	| rules, in |
-	var valid = true;
-	for (0, in.size - 2, {
-		arg i;
-		if (rules[i].contains(in[i + 1])) { } { valid = false };
-	});
-	valid;
-};
-// in progress
-~isProgressionValid.value(~rules, ~testProgression);
-
+*/
 (
-SynthDef(\piano, { |out=0, freq=440, gate=1|
-    var son = MdaPiano.ar(freq, gate, release: 0.9, stereo: 0.5, sustain: 0);
-    DetectSilence.ar(son, 0.01, doneAction:2);
-    Out.ar(out, son * 0.1);
-}).add;
-)
+s.waitForBoot {
 
-//~key = Scale.major;
-//~key.degrees; // lists the semitone arrangement of the scale degrees of the major scale.
-//~key.at([0,2,4]); // gets the tonic triad
+	/* ---------------  INPUTS  --------------- */
 
-~orientation = [0, 2, 4]; // tonic triad
-~root = 5;
+	~rules = [ // on generating 'valid' chord progressions
+		[2, 3, 4, 5, 6, 7],     // tonic         // I
+		[1, 5, 7],              // supertonic    // ii
+		[1, 4, 6],              // mediant       // iii
+		[1, 2, 5, 7],           // subdominant   // IV
+		[1, 4],                 // dominant      // V
+		[1, 2, 3, 4, 5],        // submediant    // vi
+		[1]                     // leading tone  // vii
+	];
 
-~getChords = {
-	| key, orientation, root, progression, returnHome |
-	var result;
-	for (0, progression.size - 1, {
-		arg i;
-		result = result.add(key.at(orientation) + root + progression[i] + 60);
-	});
-	if (returnHome == true) { result = result.add(result[0]); };
-	result;
-};
+	~orientation = [0, 2, 4]; // tonic triad
+	//~root = 5; //
+	~progression_length = 4; // create a progression of size 4
+	~start_degree = 1; // start on tonic
 
-~chords_1 = ~getChords.value(Scale.major, ~orientation, ~root, ~testProgression, true).midicps;
-~chords_2 = ~getChords.value(Scale.minor, ~orientation, ~root + 1, ~testProgression, true).midicps;
+	/* ---------------  SYNTH DEFINITIONS  --------------- */
 
-Pbind(
-	\instrument, \piano,
-	\freq, Pseq(~chords_2, 1),
-	\dur, 1
-).play
+	SynthDef(\piano, { |out=0, freq=440, gate=1|
+		var son = MdaPiano.ar(freq, gate, release: 0.9, stereo: 0.5, sustain: 0);
+		DetectSilence.ar(son, 0.01, doneAction:2);
+		Out.ar(out, son * 0.1);
+	}).add;
 
-// returns a progression of chords of orientation @orientation that reflects a scale of @root in @key of length @length
-~getProgressionScale = {
-	| key, root, length, orientation |
-	var progression = ~getChords.value(key, orientation, root, Array.fill(length, { arg i; i + root; }), false);
-	progression;
-}; // test case // ~getProgressionScale.value(Scale.major, 0, 7, ~orientation)
+	/* ---------------  Helper Functions  --------------- */
 
-/* -----------------------  MODULATION V. TONICIZATION ------------------------- */
-~prevState = 0; // 0 = modulation, 1 = tonicization
+	// gives progression of @num length by traversing @map starting at element @start
+	~getProgression = {
+		| map, num, start = 1 |
+		var progression = [start];
+		var current_node = start;
+		for (0, num - 2, {
+			arg i;
+			var next_node = map[current_node - 1][(map[current_node - 1].size - 1).rand];
+			progression = progression.add(next_node);
+			current_node = next_node;
+		});
+		progression;
+	};
 
-// returns a set which is the intersection of arrays @from and @to
-/* ~getPivotChords = {
+	~testProgression = ~getProgression.value(~rules, 4, 1);
+
+	// in progress
+	// unit test, check if @in is a valid progression according to @rules
+	~isProgressionValid = {
+		| rules, in |
+		var valid = true;
+		for (0, in.size - 2, {
+			arg i;
+			//if (rules[i].contains(in[i + 1])) { } { valid = false };
+		});
+		valid;
+	};
+	// in progress
+	~isProgressionValid.value(~rules, ~testProgression);
+
+	// return a dictionary object after applying @progression using @orientation starting from @root in @key
+	~getChords = {
+		| key, orientation, root, progression, returnHome = false |
+		var chords;
+		var result = Dictionary.new;
+		for (0, progression.size - 1, {
+			arg i;
+			chords = chords.add(key.at(orientation) + root + progression[i] + 60);
+		});
+		if (returnHome == true) { chords = chords.add(chords[0]); };
+
+		result.add(\chords -> chords);
+		result.add(\key -> key);
+		result.add(\root -> root);
+		result.add(\orientation -> orientation);
+		result.add(\progression -> progression);
+
+		result;
+	};
+
+	~chords_1 = ~getChords.value(Scale.major, ~orientation, ~root - 6, ~testProgression, true);
+	~chords_2 = ~getChords.value(Scale.major, ~orientation, ~root - 1, ~testProgression, true);
+
+	// returns a dictionary object which is a progression of chords
+	// of orientation @orientation that reflects a scale of @root in @key of length @length
+	~getProgressionScale = {
+		| key, root, length, orientation |
+		var progression = ~getChords.value(key, orientation, root, Array.fill(length, { arg i; key[i]; }), false);
+		progression;
+	}; // test case //
+
+	~testScale = ~getProgressionScale.value(Scale.minor, 0, 7, ~orientation);
+
+	// 'Modulation establishes the new key with (ex) supertonic, dominant, tonic and then a valid chord progression in the new key.' --> does this mean the pivot chord needs to follow the progression?
+	~getPreScaleDegree = {  // deciding on a pivot // purpose: Western tonality prefers pivot = predominant
+		| map, degree |
+		var results;
+		for (0, map.size - 1, {
+			arg i;
+			if(map[i].asSet.includes(degree) && ((i + 1) != degree)) { results = results.add(i + 1) };
+		});
+		results;
+	}; // test case // ~getPreScaleDegree.value(~rules, 5); // gets items that are predominant
+
+	/* // returns a set which is the intersection of arrays @from and @to
+	~getPivotChords = {
 	| from, to |
 	var pivots;
 	var f = from.asSet;
 	var t = to.asSet;
 	pivots = f & t;
-} // musical theory error - pivots are between keys not chord progressions */
+	} // musical theory error - pivots are between keys not chord progressions
+	  // generalized for progressions as well as keys below
+	*/
 
-// returns a set which is the intersection of the keys @from and @to
-~getPivotChords = {
-	| from, to |
+	// returns a set which is the intersection of the keys @from and @to
+	// WIP: optimizing this, inputs only from's key + root, to's key and root
+	~getPivotChords = {
+		| from, to |
+		var from_scale = ~getProgressionScale.value(from.at(\key), from.at(\root), 12, from.at(\orientation));
+		var to_scale = ~getProgressionScale.value(to.at(\key), to.at(\root), 12, to.at(\orientation));
+		var pivots = from_scale.at(\chords).asSet & to_scale.at(\chords).asSet;
+		pivots;
+	}; // ideal for pivoting between progressions and keys
 
+	~pivotChords = ~getPivotChords.value(
+		~getProgressionScale.value(Scale.major, 0, 7, ~orientation),
+		~getProgressionScale.value(Scale.major, 0, 7, ~orientation)
+	).asArray;
 
-} // use ~getPivotChords.value(3, 5); // from e to g, but what about major/minor?
+	// return chords of @progression in scale of @scale
+	~followProgression = {
+		| progression, scale |
+		var chords;
+		for (0, progression.size - 1, {
+			arg i;
+			chords = chords.add(scale.at(\chords)[progression[i] - 1]);
+		});
+		chords;
+	};
 
-~pivotChords = ~getPivotChords.value(~chords_1, ~chords_1).asArray;
+	~followProgression.value(~testProgression, ~testScale);
 
-~getScaleDegree = {
-	| map, dominant |
-	var results;
-	for (0, map.size - 1, {
-		arg i;
-		if(map[i].asSet.includes(dominant) && ((i + 1) != dominant)) { results = results.add(i + 1) };
-	});
-	results;
+	/* ---------------  Transformation Methods  --------------- */
+
+	~getModulation = {
+		| map, from, to, progression, degree, pivot_index = -1 |
+		var from_chords = ~followProgression.value(progression, from);
+		var to_chords = ~followProgression.value(progression, to);
+		//var preference = ~getPreScaleDegree.value(map, degree); // next steps, choosing a pivot chord
+		var pivots = (from.at(\chords).asSet & to.at(\chords).asSet).asArray;
+		var pivot = pivots[pivots.size.rand];
+		var result;
+		if (pivot_index <= 0) { // cannot have pivot index to be 0, else not a modulation
+			/* no split in progression among keys */
+			for (0, progression.size - 1, { arg i; result = result.add(from_chords.at(i)); });
+			result = result.add(pivot);
+			for (0, progression.size - 1, { arg i; result = result.add(to_chords.at(i)); });
+		} { /* split progression among keys */
+			for (0, pivot_index - 1, { arg i; result = result.add(from_chords.at(i)); });
+			result = result.add(pivot);
+			for (pivot_index, progression.size - 1, { arg i; result = result.add(to_chords.at(i)); });
+		};
+		result;
+	};
+
+	~resultMod = ~getModulation.value(
+		~rules,
+		~getProgressionScale.value(Scale.major, 0, 7, ~orientation),
+		~getProgressionScale.value(Scale.major, 5, 7, ~orientation),
+		~testProgression,
+		5,
+		0
+	); // next steps, common-chord pivots are defined as predominant chords
+
+	~getLine = {
+		| map, keys, progression, degree = 5, split = 0 |
+		var result;
+		var prev_key = keys.at(0); // keep track of previous state
+		for (1, keys.size - 1, {
+			arg i;
+			var r = ~getModulation.value(
+				map,
+				~getProgressionScale.value(Scale.major, prev_key, 7, ~orientation),
+				~getProgressionScale.value(Scale.major, keys[i], 7, ~orientation),
+				progression,
+				degree,
+				split
+			);
+			prev_key = keys[i]; // update state
+			for (0, r.size - 1, { arg i; result = result.add(r[i]); });
+		});
+		result;
+	};
+
+	~testLine = ~getLine.value(~rules, [0, 5, 2], ~testProgression);
+
+	/* ---------------  Mapping Sound to Symbols --------------- */
+	s.sync;
+
+	~inProgression = ~getProgression.value(~rules, ~progression_length, ~start_degree);
+	~keys = [0, 1, 5, 2, 5, 7];
+	~testLine = ~getLine.value(~rules, ~keys, ~inProgression);
+
+	/*
+	Pbind(
+		\instrument, \piano,
+		\freq, Pseq(~chords_2.at(\chords).midicps, 1),
+		\dur, 1
+	).play;
+
+	Pbind(
+		\instrument, \piano,
+		\freq, Pseq(~testScale.at(\chords).midicps, 1),
+		\dur, 1
+	).play; */
+
+	Pbind(
+		\instrument, \piano,
+		\freq, Pseq(~testLine.midicps, 1),
+		\dur, 1
+	).play;
+
 }
-
-~getScaleDegree.value(~rules, 5); // gets items that are predominant
-
-~getCommonPivots = {
-	| map, pivots, degree |
-	var d = ~getScaleDegree.value(map, degree);
-	// to be continued
-}
-
-// in progress
-~getCommonPivots.value(~rules, ~pivotChords, 5); // common pivots are defined as predominant chords
-
-if (~pivotChords.size > 0) {
-	/* use a diatonic-pivot modulation */
-	var pivot = ~pivotChords[].cpsmidi).postln;
-
-} { /* use a phrase modulation */}
-
-
+)
 
 /*
 --------------------------------------
