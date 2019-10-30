@@ -282,7 +282,7 @@ s.waitForBoot {
 	s.sync;
 
 	~inProgression = ~getProgression.value(~rules, ~progression_length, ~start_degree);
-	~keys = [0, 1, 5, 2, 5, 7];
+	~keys = [0, 1, 5, 2, 5, 7]; // next step, specifying major/minor and what happens if no pivot chords?
 	~testLine = ~getLine.value(~rules, ~keys, ~inProgression);
 
 	/*
