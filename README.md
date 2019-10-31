@@ -14,7 +14,7 @@ Generates mealy machine which generates chord progressions and modulations betwe
 
 ### General Information
 - example output progressions available on YouTube at [https://www.youtube.com/playlist?list=PL6PK-gyv7Apqd1jMrLTKxRtt6LnFbO-DO](https://www.youtube.com/playlist?list=PL6PK-gyv7Apqd1jMrLTKxRtt6LnFbO-DO)
-- source code is available on GitHub as 
+- source code is available on GitHub as [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-3](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-3)
 
 ### Rules for System Generation
 
