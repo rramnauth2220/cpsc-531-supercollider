@@ -13,8 +13,8 @@ Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) <
 Generates mealy machine which generates chord progressions and modulations between keys. 
 
 ### General Information
-- example output progressions will be uploaded on either SoundCloud/YouTube
-- source code is available on GitHub as [https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/Non-531%20Projects/chord-progression-mealy-machine.scd](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/Non-531%20Projects/chord-progression-mealy-machine.scd)
+- example output progressions available on YouTube at [https://www.youtube.com/playlist?list=PL6PK-gyv7Apqd1jMrLTKxRtt6LnFbO-DO](https://www.youtube.com/playlist?list=PL6PK-gyv7Apqd1jMrLTKxRtt6LnFbO-DO)
+- source code is available on GitHub as 
 
 ### Rules for System Generation
 
@@ -54,7 +54,7 @@ where, essentially, each sub-element is a pointer to another element. Traversing
 	}; // test case // ~getProgression.value(~rules, 4, 1);
 ```
 
-This produces a machine that generates progressions, in which each scale degree states are not equally likely to be arrived at:
+This produces a machine that generates progressions, in which each scale degree states are not equally likely to be arrived at. In other words, certain progressions may highlighted and their corresponding conenctions preferred.
 
 ![Chord Progression Example Mealy Machine](images/chord-progression.png)
 
