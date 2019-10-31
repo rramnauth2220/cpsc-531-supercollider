@@ -16,12 +16,219 @@ Generates mealy machine which generates chord progressions and modulations betwe
 - example output progressions will be uploaded on either SoundCloud/YouTube
 - source code is available on GitHub as [https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/Non-531%20Projects/chord-progression-mealy-machine.scd](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/Non-531%20Projects/chord-progression-mealy-machine.scd)
 
-### System Rules
+### Rules for System Generation
 
-The system will *generate* a mealy machine according to given rules. In Western tonal music, such rules may include that a dominant chord is generally follows by either a tonic or subdominant chord.  
+The system will *generate* a mealy machine according to given rules. In Western tonal music, such rules may include that a dominant chord is generally follows by either a tonic or subdominant chord. According to Dummies.com's [Creating Music with Chord Progressions](https://www.dummies.com/art-center/music/piano/creating-music-with-chord-progressions/), the following are common chord movements in Western tonal music. 
 
 ![Common Chord Movements in Western Tonal Music](images/common-chord-movements.png)
 
+This is programmatically represented as a multidimensional list 
+
+```supercollider
+~rules = [ // on generating 'valid' chord progressions
+	[2, 3, 4, 5, 6, 7],     // tonic         // I
+    [1, 5, 7],              // supertonic    // ii
+    [1, 4, 6],              // mediant       // iii
+    [1, 2, 5, 7],           // subdominant   // IV
+    [1, 4],                 // dominant      // V
+    [1, 2, 3, 4, 5],        // submediant    // vi
+    [1]                     // leading tone  // vii
+];
+```
+
+where, essentially, each sub-element is a pointer to another element. Traversing these tonal 'rules' will output a mealy machine by which we generate valid chord progressions in any given key(s). The method for traversing these universe of rules is as follows:
+
+```supercollider
+// gives progression of @num length by traversing @map starting at element @start
+	~getProgression = {
+		| map, num, start = 1 |
+		var progression = [start];
+		var current_node = start; // define initial state
+		for (0, num - 2, {
+			arg i;
+			var next_node = map[current_node - 1][(map[current_node - 1].size - 1).rand]; // create state
+			progression = progression.add(next_node); // add state to machine
+			current_node = next_node; // move to next state
+		});
+		progression;
+	}; // test case // ~getProgression.value(~rules, 4, 1);
+```
+
+This produces a machine that generates progressions, in which each scale degree states are not equally likely to be arrived at:
+
+![Chord Progression Example Mealy Machine](images/chord-progression.png)
+
+### Moving through the System
+
+Other inputs that influence the definition of a chord and how that chord is played:
+
+```supercollider
+    ~orientation = [0, 2, 4]; // tonic triad // intervals between notes
+	~progression_length = 4; // length of chord progression
+	~start_degree = 1; // start on this scale degree (tonic)
+	~scale = Scale.major; // [1, 2, 5, 6, 7, 9, 12]; // or can use Scale.major/minor/shang
+	~keys = [0, 1, 5, 2, 5, 7]; // keys to modulate between
+```
+
+Chords of a specified key are generated using the following method after generating a state machine using ```~getProgression```.
+
+```supercollider
+// return a dictionary object after applying @progression using @orientation starting from @root in @key
+	~getChords = {
+		| key, orientation, root, progression, returnHome = false |
+		var chords;
+		var result = Dictionary.new;
+		for (0, progression.size - 1, {
+			arg i;
+			chords = chords.add(key.at(orientation) + root + progression[i] + 60);
+		});
+		if (returnHome == true) { chords = chords.add(chords[0]); };
+
+		result.add(\chords -> chords);
+		result.add(\key -> key);
+		result.add(\root -> root);
+		result.add(\orientation -> orientation);
+		result.add(\progression -> progression);
+
+		result;
+	}; // test case // ~getChords.value(Scale.major, ~orientation, ~root - 6, ~testProgression, true);
+```
+
+This can be extended in order to get a scale of chords in a specified key. This is extension is provided as the following method:
+
+```supercollider
+    // returns a dictionary object which is a progression of chords
+	// of orientation @orientation that reflects a scale of @root in @key of length @length
+	~getProgressionScale = {
+		| key, root, length, orientation |
+		var progression = ~getChords.value(key, orientation, root, Array.fill(length, { arg i; key[i]; }), false);
+		progression;
+	}; // test case // ~getProgressionScale.value(Scale.minor, 0, 7, ~orientation);
+```
+
+We can then follow this progression according to the scale output. 
+
+```supercollider
+    // return chords of @progression in scale of @scale
+	~followProgression = {
+		| progression, scale |
+		var chords;
+		for (0, progression.size - 1, {
+			arg i;
+			chords = chords.add(scale.at(\chords)[progression[i] - 1]);
+		});
+		chords;
+	}; // test case // ~followProgression.value(~testProgression, ~testScale);
+```
+
+### Transitioning between Two Keys
+
+Transitions between states in the machine are defined as *chord modulations*. One type of modulation implemented in this program is a *diatonic-pivot*. A pivot is a common chord between two given keys. However, between two keys there are three possible situations when attempting to use a diatonic pivot modulation:
+
+1. a single pivot can be identified
+2. there is no common chord, and therefore no pivot
+3. there are several pivots, and for a single pivot to be deterministically selected, preferences or a system of ranking must first be declared
+
+For the scope of this project and due to time constraints, the first scenario has been fully implemented. Prototypes of the other two scenarios are documented in the code as ```~getPreScaleDegree``` for situation where there are multiple valid pivots and *phrase modulation* is implied if no pivot chords can be identified. 
+
+In determining the pivot chords of two keys:
+
+```supercollider
+    ~getPivotChords = {
+		| from, to |
+		var from_scale = ~getProgressionScale.value(from.at(\key), from.at(\root), ~scale.size, from.at(\orientation));
+		var to_scale = ~getProgressionScale.value(to.at(\key), to.at(\root), ~scale.size, to.at(\orientation));
+		var pivots = from_scale.at(\chords).asSet & to_scale.at(\chords).asSet;
+		pivots;
+	}; // test case // ~getPivotChords.value(~getProgressionScale.value(Scale.major, 0, 7, [0, 2, 4]), ~getProgressionScale.value(Scale.major, 0, 7, [0, 2, 4])).asArray;
+```
+
+After the transition between two keys is defined, we can generate a progression that involves a modulation between two keys:
+
+```supercollider
+    // compute modulation with pivot chord at @pivot_index between @from and @to keys
+	~getModulation = {
+		| map, from, to, progression, degree, pivot_index = -1 |
+		// follow the progression according to scale/key
+		var from_chords = ~followProgression.value(progression, from);
+		var to_chords = ~followProgression.value(progression, to);
+		
+		// identify potential pivot chords
+		//var preference = ~getPreScaleDegree.value(map, degree); // next steps, choosing a pivot chord in the case of multiple pivot
+		var pivots = (from.at(\chords).asSet & to.at(\chords).asSet).asArray;
+		var pivot = pivots[pivots.size.rand];
+
+		var result;
+		if (pivot_index <= 0) { // cannot have pivot index to be 0, else not a modulation
+			/* no split in progression among keys */
+			for (0, progression.size - 1, { arg i; result = result.add(from_chords.at(i)); });
+			result = result.add(pivot);
+			for (0, progression.size - 1, { arg i; result = result.add(to_chords.at(i)); });
+		} { /* split progression among keys */
+			for (0, pivot_index - 1, { arg i; result = result.add(from_chords.at(i)); });
+			result = result.add(pivot);
+			for (pivot_index, progression.size - 1, { arg i; result = result.add(to_chords.at(i)); });
+		};
+
+		result; // return resulting progression with modulation
+	};
+```
+
+Using this function is as follows:
+
+```supercollider
+	// test case
+	~resultMod = ~getModulation.value(
+		~rules,
+		~getProgressionScale.value(Scale.major, 0, 7, ~orientation),
+		~getProgressionScale.value(Scale.major, 5, 7, ~orientation),
+		~testProgression,
+		5,
+		0
+	); // next steps, common-chord pivots are defined as predominant chords such as in Western tonal music
+```
+
+### Transitioning between Multiple State Keys
+
+This process for transitions between two keys can be generalized for modulating between any number of keys. This is defined as a line of progressions and modulations: 
+
+```supercollider
+    ~getLine = {
+		| map, keys, progression, degree = 5, split = 0 |
+		var result;
+		var prev_key = keys.at(0); // keep track of previous state
+		for (1, keys.size - 1, {
+			arg i;
+			var r = ~getModulation.value( // perform modulation
+				map,
+				~getProgressionScale.value(~scale, prev_key, ~scale.size, ~orientation),
+				~getProgressionScale.value(~scale, keys[i], ~scale.size, ~orientation),
+				progression,
+				degree,
+				split
+			);
+			prev_key = keys[i]; // update state
+			for (0, r.size - 1, { arg i; result = result.add(r[i]); });
+		});
+		result;
+	}; // test case // ~getLine.value(~rules, [0, 5, 2], ~testProgression);
+```
+
+### Mapping System Inputs to Outputs
+
+The process of generating a machine that generates valid chord progressions and modulations is a three-part process. 
+
+1. Generate the state machine using tonal rules:
+```~inProgression = ~getProgression.value(~rules, ~progression_length, ~start_degree)```
+2. Create and organize resulting chord progressions and modulations into a sequence: ```~outputLine = ~getLine.value(~rules, ~keys, ~inProgression);```
+3. Play the result: 
+```supercollider
+	Pbind(
+		\instrument, \piano,
+		\freq, Pseq(~outputLine.midicps, 1),
+		\dur, 1
+	).play;
+```
 
 ---------
 ## Midterm: Musique Concrète
