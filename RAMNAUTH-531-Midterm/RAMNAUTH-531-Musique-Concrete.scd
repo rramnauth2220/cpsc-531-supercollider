@@ -250,6 +250,7 @@ s.waitForBoot {
 		x = m.asStream;
 		x.next([0, ~chainOrder]);
 		~markov_notes = Array.fill(~notes.size, {x.next});
+		~markov_notes.postln;
 
 		s.sync;
 
