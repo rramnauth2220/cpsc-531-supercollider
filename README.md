@@ -2,19 +2,94 @@
 
 **10-07-2019 Notice:** The purpose of this repository is to more easily share and discuss my work in CPSC 431/531 with current students. After this Fall 2019 semester, this repo will become private so as to protect the integrity of the assignments and future students' work. 
 
+**Contents:**
+1. Project 1: [Matrix Beats](https://github.com/rramnauth2220/cpsc-531-supercollider#project-1-matrix-beats)
+2. Midterm: [Musique Concrète](https://github.com/rramnauth2220/cpsc-531-supercollider#midterm-musique-concr%C3%A8te)
+3. Project 3: [Mealy Machine for Chord Progressions](https://github.com/rramnauth2220/cpsc-531-supercollider#musical-mealy-machine)
+4. Final: [Sentiment Analysis](https://github.com/rramnauth2220/cpsc-531-supercollider#final-sentiment-analysis)
+
 ---------
 **Rebecca Ramnauth** </br>
 Computer Science PhD Student </br>
 Yale University | AKW 507 | [rramnauth2220.github.io](rramnauth2220.github.io) </br>
 
 ---------
+## Final: Sentiment Analysis
+
+Text-based sentiment analysis on poems, and music generation and emotion recognition in Supercollider.
+
+### General Information
+- demos available on YouTube at [https://www.youtube.com/playlist?list=PL6PK-gyv7ApoUGo563t59nsMr3HEhMVV8](https://www.youtube.com/playlist?list=PL6PK-gyv7ApoUGo563t59nsMr3HEhMVV8)
+- source code is available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/RAMNAUTH-531-Final/](https://github.com/rramnauth2220/cpsc-531-supercollider/blob/master/RAMNAUTH-531-Final/)
+
+### System Overview
+The system will generate musical pieces from text. The system uses known relations between macro-elements of music (e.g., scale, tempo, and octave) and the emotions they evoke. Furthermore, it generates micro-structure by selecting musical training data and inferring patterns that would be appropriate to the text-based sentiment of the input.
+
+This project presents such a system to generate music from literature. Specifically, I focus on using poems to generate music that attempts to capture the movement of emotion words. The challenge in composing new music&mdash;and, by relation, a system that attempts to generalize the composition process to generate new music&mdash;is the limitless number of choices and possiblities. I present several mapping rules between the emotional density of a text and elements of music such as tempo, key, etc.
+
+Certainly, there's no one correct way to capture the emotions in text through music, and there is no one correct way to produce 'good' music. However, generative music is compelling as a new art form, and my system can be improve in many ways (see Next Steps section). Therefore, for this iteration, my goal is to present initial ideas for achieving text-based sentiment analysis and music emotion recognition in Supercollider.
+
+### Creating Emotional Profiles
+Given a poem in the form of a .txt file, we use the [NRC Emotion Lexicon](https://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) to identify the number of words in each section that are associated with a certain affect category. The lexicon considers eight emotions (anticipation, joy, fear, anger, disgust, sadness, fear, surprise, and trust) as well as positive and negative sentiment.
+
+On parsing the emotion lexicon and input text file:
+```supercollider
+// state order by which to parse lexicon affects
+var sentiment_order = [ \positive, \negative, \anger, \anticipation, \disgust, \fear, \joy, \sadness, \surprise, \trust ];
+
+// parse emotion lexicon (a .csv file)
+var emolex = FileReader.read("emotion-lexicon/emolex_english.csv".resolveRelative, true, true, delimiter: $,);
+
+// parse input poem file
+var input = FileReader.read("input/phenomenal-woman.txt".resolveRelative, false, true);
+```
+
+For each section, sub-section, and text as a whole, the ratio of emotion words to the total number of words is calculated. I will refer to this ratio as the *emotional density*. Emotion densities are used to generate sequence of musical phrases for each section of the input text. 
+
+```supercollider
+// preprocessing
+var lex = ~convertToDictionary.value(emolex /*, sentiment_order*/); // map as dictionary of sentiments
+var text = ~removeWhitespace.value(input); // remove extraneous linebreaks and whitespace
+
+// infer sentiment
+var uniques = ~getUniqueKeys.value(text, true);
+var existing_keys = ~getExistingOnly.value(uniques, lex);
+var existing_values = ~getValues.value(existing_keys, lex);
+var sentiment_density = (~enumerateSentiment.value(text, existing_keys, existing_values)/input_wordCount);
+
+// extract emotions
+var sentiment_dictionary = ~mapAsDictionary.value(sentiment_density, sentiment_order).postcs;
+var emotion_dictionary = ~extract.value(sentiment_dictionary,
+	[\anger, \anticipation, \disgust, \fear, \joy, \sadness, \surprise, \trust]);
+```
+
+Other text analysis features include:
+```supercollider
+var input_wordCount = ~wordCount.value(input);
+var input_wordCountPerLine = ~wordsPerLine.value(input);
+var input_syllableCount =
+//~permutations.value("a", 2);       //test generating permutations
+//~phthongCount.value("a", 2);       //test determining vowel patterns
+//~syllableCount.value("hello");     //test determining syllable count of item
+//~totalSyllableCount.value(input);  //test determining syllable count of array
+~averageSyllablesPerLine.value(input);
+```
+
+### Generating Musical Characteristics
+
+
+### Next Steps
+- incorporating speech production characteristics of words such as syllable count/movement into a musical feature such as determining tempo
+
+
+
 ## Musical Mealy Machine
 
 Generates mealy machine which generates chord progressions and modulations between keys. 
 
 ### General Information
 - example output progressions available on YouTube at [https://www.youtube.com/playlist?list=PL6PK-gyv7Apqd1jMrLTKxRtt6LnFbO-DO](https://www.youtube.com/playlist?list=PL6PK-gyv7Apqd1jMrLTKxRtt6LnFbO-DO)
-- source code is available on GitHub as [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-3](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-3)
+- source code is available on GitHub at [https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-3](https://github.com/rramnauth2220/cpsc-531-supercollider/tree/master/RAMNAUTH-531-Project-3)
 
 ### Rules for System Generation
 
