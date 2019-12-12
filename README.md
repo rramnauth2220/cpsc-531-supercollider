@@ -3,10 +3,10 @@
 **10-07-2019 Notice:** The purpose of this repository is to more easily share and discuss my work in CPSC 431/531 with current students. After this Fall 2019 semester, this repo will become private so as to protect the integrity of the assignments and future students' work. 
 
 **Contents:**
-1. Project 1: [Matrix Beats](https://github.com/rramnauth2220/cpsc-531-supercollider#project-1-matrix-beats)
-2. Midterm: [Musique Concrète](https://github.com/rramnauth2220/cpsc-531-supercollider#midterm-musique-concr%C3%A8te)
-3. Project 3: [Mealy Machine for Chord Progressions](https://github.com/rramnauth2220/cpsc-531-supercollider#musical-mealy-machine)
-4. Final: [Sentiment Analysis](https://github.com/rramnauth2220/cpsc-531-supercollider#final-sentiment-analysis)
+1. **Project 1**: [Matrix Beats](https://github.com/rramnauth2220/cpsc-531-supercollider#project-1-matrix-beats)
+2. **Midterm**: [Musique Concrète](https://github.com/rramnauth2220/cpsc-531-supercollider#midterm-musique-concr%C3%A8te)
+3. **Project 3**: [Mealy Machine for Chord Progressions](https://github.com/rramnauth2220/cpsc-531-supercollider#musical-mealy-machine)
+4. **Final**: [Sentiment Analysis](https://github.com/rramnauth2220/cpsc-531-supercollider#final-sentiment-analysis)
 
 ---------
 **Rebecca Ramnauth** </br>
@@ -27,7 +27,7 @@ The system will generate musical pieces from text. The system uses known relatio
 
 This project presents such a system to generate music from literature. Specifically, I focus on using poems to generate music that attempts to capture the movement of emotion words. The challenge in composing new music&mdash;and, by relation, a system that attempts to generalize the composition process to generate new music&mdash;is the limitless number of choices and possiblities. I present several mapping rules between the emotional density of a text and elements of music such as tempo, key, etc.
 
-Certainly, there's no one correct way to capture the emotions in text through music, and there is no one correct way to produce 'good' music. However, generative music is compelling as a new art form, and my system can be improve in many ways (see Next Steps section). Therefore, for this iteration, my goal is to present initial ideas for achieving text-based sentiment analysis and music emotion recognition in Supercollider.
+Certainly, there's no one correct way to capture the emotions in text through music, and there is no one correct way to produce 'good' music. However, generative music is compelling as a new art form, and my system can be improve in many ways (see section on [Further Directions](https://github.com/rramnauth2220/cpsc-531-supercollider#further-directions)). Therefore, for this iteration, my goal is to present initial ideas for achieving text-based sentiment analysis and music emotion recognition in Supercollider.
 
 ### Creating Emotional Profiles
 Given a poem in the form of a .txt file, we use the [NRC Emotion Lexicon](https://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) to identify the number of words in each section that are associated with a certain affect category. The lexicon considers eight emotions (anticipation, joy, fear, anger, disgust, sadness, fear, surprise, and trust) as well as positive and negative sentiment.
@@ -77,11 +77,245 @@ var input_syllableCount =
 
 ### Generating Musical Characteristics
 
+Each piece generated from this system are of three simultaneous, but different melodies. One is the main voice which has a greater sensitivity to emotion movements in the text. The remaining two are melodies that vary in sensitivity to text-based emotion and sentiment. The reason why multiple melodies were incorporated was to balance and accurately reflect the input text's **complexity**, **order**, and **emotional accuracy**. Two melodies sounded too simple and thin whereas four or more melodies sounded cacophonous and less cohesive. 
 
-### Next Steps
+#### Synth Definitions
+Furthermore, simultaneous piano melodies make it difficult to hear each individual melody and appreciate each's 
+contributions to the overall composition. Therefore, the main melody (the voice) has a droning vibrato to model a human's voice, and the secondary melodies are
+produced as bells for ambiance and piano strokes for the true melody. The synth definitions are as follows:
+
+```supercollider
+/* ---------  Synth Definitions  ---------- */
+
+// main voice
+SynthDef(\drone,
+{ | out = 0, speed = 1, amp = 0.5, rel = 0.5, dur = 1, freq=200 |
+	var base = LFNoise1;
+	var adsr = EnvGen.ar(Env.linen(dur * 1, rel, 0.1, 1, -3), doneAction: 2);
+	var sig = HPF.ar(FreeVerb2.ar(*XFade2.ar(SinOscFB.ar([20, freq],base.ar(speed * 2) + 1 / 8),
+	SinOscFB.ar([freq, 25],base.ar(speed) + 1 / 2),base.ar(20))), 120);
+	sig = HPF.ar(sig, 100);
+	sig = GVerb.ar(sig);
+	sig = (sig * adsr);
+	Out.ar(out, sig * amp);
+}).add;
+
+// primary melody
+SynthDef(\bass,
+{ | out = 0, amp = 1, b = 2, rel = 15, freq = 440 |
+	var bass, s1, f, lag, d;
+	var env = EnvGen.ar(Env.linen(0.0, rel, 0), doneAction: 2);
+	d = Duty.kr(b * 4, 0, Dseq([b, b * 2, b * 4, b / 2],inf));
+	lag = Duty.kr(b * 4, 0, Dseq([0.2, 0.1, 0.08, 0.02, 0.052, 0.12],inf)).lag(0.2);
+	s1 = SinOsc.ar(Lag.kr([freq, freq]), mul: 0.2) * Decay2.kr(Impulse.kr([b / 16, b / 8]), 0.4,decayTime: b * 4);
+	s1 = FreeVerb.ar(s1, room: 2, mul: 0.5, add: s1);
+	Out.ar(out,(s1 * amp) * env);
+}).add;
+
+// secondary melody
+SynthDef(\mdapiano,
+{ |out=0, freq=440, gate=1, vel=80|
+	var son = MdaPiano.ar(freq, gate, vel, 0.4, 0.2, stereo: 0.3, sustain: 0);
+	DetectSilence.ar(son, 0.01, doneAction:2);
+	Out.ar(out, son * 0.1);
+}).add;
+
+SynthDef(\piano, 
+{ |out=0, freq=440, gate=1|
+	var son = MdaPiano.ar(freq, gate, release: 0.9, stereo: 0.5, sustain: 0.05);
+	DetectSilence.ar(son, 0.01, doneAction:2);
+	Out.ar(out, son * 0.1);
+}).add;
+```
+
+#### Major & Minor Keys
+Major keys are known to contribute a more positive atmosphere to the composition, whereas minor keys contribute more negative undertones. Whether a generated piece
+is in a major or minor key is determined by the ratio of postive sentiment to negative sentiment in the entire poem. If the ratio is greater than 1, C major is used, and if the ratio is 1 or less, C minor is used. 
+
+In light of the [chord progression generator](https://github.com/rramnauth2220/cpsc-531-supercollider#musical-mealy-machine) completed as Project 3, experimenting with keys other than C major/minor is of interest for future work. Relating sentiment movement to specific key modulations will improve the emotional accuracy of the piece to its text input. Transitions, such as moving from C major to A minor when the plot moves from more positive to negative sentiment, are musically interesting and add to the feature richness of the overall system.
+
+```supercollider
+var scale = if(((sentiment_dictionary.at(\positive) - sentiment_dictionary.at(\sadness)) > 0), { Scale.major }, { Scale.minor });
+```
+
+This relating of key to sentiment is incorporated in the generation of the melodies. 
+
+#### Octaves
+
+Octaves for the primary melody is determine by the ratio of joy to sadness emotion densities. After several case studies, this ratio did not prove to be effective for text that include more positive than negative sentiment. The ratio between sentiment densities was also incorporated.
+
+```supercollider
+var octave = ~calculateOctave.value(sentiment_dictionary, (-1 * existing_keys.size/input_wordCount), (existing_keys.size/input_wordCount), 3, 7);
+var melody_octave = octave + ~reinforceOctave.value(emotion_dictionary, [\anger, \fear, \sadness, \disgust], [\joy, \trust], 1);
+```
+
+Related functions on calculating or reinforcing octaves:
+
+```supercollider
+// determine octave according to @sentiment
+// map @sentiment to given octave range [@outMin, @outMax]
+~calculateOctave = {
+	| sentiment, inMin, inMax, outMin, outMax |
+	var positive_density = (sentiment.at(\joy) + sentiment.at(\positive))/2;
+	var negative_density = (sentiment.at(\sadness) + sentiment.at(\negative))/2;
+ 	var output = (positive_density - negative_density).linlin(inMin, inMax, outMin - 1, outMax);
+	output;
+};
+
+// determine octave for non-main melody using @negative:@positive ratio of @dictionary items
+~reinforceOctave = {
+	| dictionary, negative, postive, weight = 1 |
+	var adjustVal = 0;
+	var prevalent = ~getKeyOfMaximum.value(dictionary);
+	var negative_emotions = negative.asSet;
+	var positive_emotions = negative.asSet;
+	if (positive_emotions.includes(prevalent)) { adjustVal = adjustVal + weight };
+	if (negative_emotions.includes(prevalent)) { adjustVal = adjustVal - weight };
+	adjustVal;
+};
+```
+
+#### Voice
+
+This voice is the result of reading events of a given midi file. The example midi files provided in the ```/midi/``` directory were downloaded from [kunstderfuge.com](http://www.kunstderfuge.com/). Only ```~chain_length``` events from the midi file are extracted for the purpose of runtime efficiency.
+
+The midi files provided in the directory are considered to be the training pool. The system will selectively read midi files that are considered most appropriate based on mapping conveyed musical emotion to the most prevalent emotion in the text:
+
+```supercollider
+// determine appropriate training pool based on most prevalent emotion
+var prevalent_emotion = ~getKeyOfMaximum.value(emotion_dictionary);
+var modified_path = ("midi/"++ prevalent_emotion ++ "/");
+```
+
+Then, generate a sequence of ```~chainLength``` Markov chains of order ```~chainOrder``` after parsing event amplitudes, notes, and durations from the training pool. 
+
+```supercollider
+// parse training midi data
+var raw_data = ~getPhrases.value(modified_path);
+var raw_index = rrand(0, raw_data.size - 1);
+var raw_notes = ~getEachNthElement.value(raw_data[raw_index], 0);
+var raw_durations = ~getEachNthElement.value(raw_data[raw_index], 1);
+var raw_amplitudes = ~getEachNthElement.value(raw_data[raw_index], 2);
+
+// generate Markov sets
+var m_notes = MarkovSetN.fill(chain_length, Pseq(raw_notes).asStream, chain_order);
+var m_durations = MarkovSetN.fill(chain_length, Pseq(raw_durations).asStream, chain_order);
+var m_amplitudes = MarkovSetN.fill(chain_length, Pseq(raw_amplitudes).asStream, chain_order);
+
+// ... ... ...
+
+// generate notes
+m_notes.makeSeeds;
+~m_notes_stream = m_notes.asStream;
+~m_notes_stream.next([0, 2]);
+~markov_notes = Array.fill(raw_notes.size, {~m_notes_stream.next});
+
+// generate durations
+m_durations.makeSeeds;
+~m_durations_stream = m_durations.asStream;
+~m_durations_stream.next([0, 2]);
+~markov_durations = Array.fill(raw_durations.size, {~m_durations_stream.next});
+
+// generate amplitudes
+m_amplitudes.makeSeeds;
+~m_amplitudes_stream = m_amplitudes.asStream;
+~m_amplitudes_stream.next([0, 2]);
+~markov_amplitudes = Array.fill(raw_amplitudes.size, {~m_amplitudes_stream.next});
+```
+
+Finally, play the result:
+
+```supercollider
+Pbind(\instrument, \drone,
+	\freq, Pseq(~markov_notes.midicps, inf),
+	\speed, Pseq(~markov_durations, inf),
+	\amp, Pseq(~markov_amplitudes, inf))
+.play;
+```
+
+#### Primary Melody
+
+The primary melody builds upon the main voice by determining the variability of the voice and normalizing the midi values according to the calculated octave previously discussed.
+
+```supercollider
+var variability = ~calculateSD.value(~markov_notes).round(1);             // calculate variability in voice
+var shiftAmount = ~getMinimumValue.value(~markov_notes);                  // determine how much to shift down to baseline 0
+var shifted_notes = ~shiftValues.value(~markov_notes, shiftAmount * -1);  // execute shift
+var stripped_notes = ~removeNonNumeric.value(shifted_notes);              // process extraneous event data
+var new_notes = stripped_notes.normalize(min: 0, max: variability);       // map values to a more appropriate range
+```
+
+The result is a piano composition that is contextualized in the larger piece as well as reflect the sentiment of the text input.
+
+```supercollider
+Pbind(
+	\instrument, \piano,
+	\scale, Scale.major,
+	\degree, Pseq(new_notes, inf),
+	\dur, 0.5,
+	\octave, octave,
+	\root, 3,
+	\vel, 0.5,
+	\legato, 0.95
+).play;
+```
+
+#### Secondary Melody/Ambience
+
+The secondary melody, for the purpose of unifying the voice and primary melody, reads the musical training data to generate bells of appropriate notes, duration, and amplitudes as well as consider the frequencies in which each appears.
+
+```supercollider
+// determine best length
+var melody_length = ~calculateSD.value(raw_notes).round(1);
+
+// determine most appropriate notes
+var note_frequencies = ~getFrequencies.value(raw_notes, raw_notes.asSet.asArray);
+var melody_notes = ~getNCommon.value(note_frequencies, raw_notes.asSet.asArray, melody_length);
+
+// determine most appropriate durations
+var duration_frequencies = ~getFrequencies.value(raw_durations, raw_durations.asSet.asArray);
+var melody_durations = ~getNCommon.value(duration_frequencies, raw_durations.asSet.asArray, melody_length);
+
+// determine most appropriate amplitudes
+var amplitude_frequencies = ~getFrequencies.value(raw_amplitudes, raw_amplitudes.asSet.asArray);
+var melody_amplitudes = ~getNCommon.value(amplitude_frequencies, raw_amplitudes.asSet.asArray, melody_length);
+```
+
+This is played as follows:
+```supercollider
+Pbind(
+	\instrument, \bass,
+	\freq, Pseq(melody_notes.midicps, inf),
+	\dur, Pseq(melody_durations, inf),
+	\amp, Pseq(melody_amplitudes.normalize(min: 0, max: 1), inf)
+).play
+```
+
+For future improvements, the strength of the secondary melody should relate to the necessary strength of the main voice and primary melody. Whether the emotional movement of the text warrants more ambient sounds should be accurately reflected in the amplitudes and complexity of this melody. 
+
+### Synthesis
+Putting together these three melodies is accomplished by toggling three user-controlled booleans. From a programming perspective, these three switches were important for testing the algorithms of each melody. Eventually, I left them as part of the system for the user to toggle and see the impact of each voice on the resulting output.
+
+```supercollider
+var voice = true;        // main line
+var playthrough = true;  // primary melody
+var melody = true;       // secondary melody
+```
+
+Example output compositions are available on YouTube at [https://www.youtube.com/playlist?list=PL6PK-gyv7ApoUGo563t59nsMr3HEhMVV8](https://www.youtube.com/playlist?list=PL6PK-gyv7ApoUGo563t59nsMr3HEhMVV8).
+
+Although these case studies are not a comprehensive representation of poems in general, the program is capable of reading any text input type and selecting training midi data according the characteristics of the input. This versatility is possible because files are not explicitly declared and loaded into buffers, but are selected from an array of relative paths. Nonetheless, the
+outputs that select from a larger database of training data are as interesting and 'listenable' as the example outputs provided. However, in the example output compositions, I want to highlight how changing the input text (by varying emotion affect) can affect the system's outputs. 
+
+### Further Directions
+If I had more time to dedicate to the improvement of this system, I would explore the following directions:
+
 - incorporating speech production characteristics of words such as syllable count/movement into a musical feature such as determining tempo
+- in light of project 3's [chord progression generator](https://github.com/rramnauth2220/cpsc-531-supercollider#musical-mealy-machine) experimenting with keys other than C major/minor is of interest for future work.
+- mapping relationship between three melodies according to sentiment&mdash;that is, programmatically determining the strength of each.
+- whether the emotional movement of the text warrants more ambient sounds should be accurately reflected in the amplitudes and complexity of the secondary melody. 
 
-
+Ultimately, I see this project as a successful improvement and combination of each of my previous projects. Reflecting on the further directions I listed for previous projects, I have made significant progress towards each future goal through this final project.
 
 ## Musical Mealy Machine
 
@@ -748,4 +982,3 @@ In my section on [Determining User Inputs](https://github.com/rramnauth2220/cpsc
 An example of such an 'input system' could be the sample library itself and mapping, for instance, the sentiment or popularity of each sample to 'relevant inputs' which may be amplitudes and panning values. In essence, the input system is the one input the user provides. It creates a kind of black-box obfuscation as to how the system works, which may then impact how creative the user perceives the system to be. Therefore, I strongly believe that a system's creativity is greatly influenced by its transparency. If the user can easily deconstruct the relationship between the inputs and the output, isn't the user more likely to percieve the system as uncreative? 
 
 If I had more time to dedicate to this project, I would explore/implement one such input system. 
-
